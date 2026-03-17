@@ -42,7 +42,7 @@ People seeking mental health support often face long wait times for professional
 
 ### 3.1 In Scope
 - Conversational chat UI (web browser, single-page)
-- Streaming LLM responses via Server-Sent Events (SSE)
+- Streaming LLM responses via Server-Sent Events (SSE) *(recommended; a non-streaming JSON response is an acceptable fallback)*
 - RAG tool: semantic search over a curated mental health knowledge base (FAISS + LangChain)
 - Web search tool: live search results via the Tavily API
 - Calculator tool: safe evaluation of mathematical expressions (e.g., PHQ-9 / GAD-7 scoring, sleep efficiency)
@@ -84,7 +84,7 @@ People seeking mental health support often face long wait times for professional
 |----|------------|
 | FR-01 | The UI shall display a scrollable message history with distinct styling for user and agent messages. |
 | FR-02 | The UI shall provide a text input field and a Submit button (Enter key also submits). |
-| FR-03 | The UI shall stream agent tokens into the message bubble as they arrive. |
+| FR-03 | The UI should stream agent tokens into the message bubble as they arrive (recommended). Displaying the complete response after generation finishes is an acceptable fallback. |
 | FR-04 | The UI shall display a visible loading indicator while the agent is processing. |
 | FR-05 | The UI shall show a labeled tool badge when a tool is invoked (e.g., "Knowledge Base", "Web Search", "Calculator"). |
 | FR-06 | The UI shall display a persistent disclaimer: "This tool is not a substitute for professional mental health care." |
@@ -94,9 +94,10 @@ People seeking mental health support often face long wait times for professional
 | ID | Requirement |
 |----|------------|
 | FR-08 | The tool shall accept a natural-language query and return the most semantically relevant chunks from the knowledge base. |
-| FR-09 | The knowledge base shall be built from curated documents covering: CBT techniques, DBT skills, mindfulness/MBSR exercises, grounding techniques, sleep hygiene (CBT-I), and crisis resources. |
+| FR-09 | The knowledge base shall consist of **at least 5 real, substantively authored documents** covering distinct mental health topics (e.g., CBT techniques, DBT skills, mindfulness exercises, grounding techniques, sleep hygiene). Stub or placeholder files do not count toward this minimum. |
 | FR-10 | The tool shall use LangChain's document pipeline: `TextLoader` → `RecursiveCharacterTextSplitter` → `OpenAIEmbeddings` → `FAISS`. |
-| FR-11 | The tool shall return the top-k (default: 4) relevant chunks along with their source document name. |
+| FR-11 | The tool shall return the top-k (default: 4) relevant chunks, each tagged with its source document name. |
+| FR-11a | The agent's final response shall cite the source document(s) from which information was retrieved, so the user can evaluate the grounding of the answer (e.g., "According to `cbt_techniques.md`…"). |
 | FR-12 | The knowledge base shall be built once via an ingest script and persisted to disk; it shall not be rebuilt on every server start. |
 
 ### 5.3 Web Search Tool
@@ -119,12 +120,13 @@ People seeking mental health support often face long wait times for professional
 ### 5.5 Agent / Backend
 | ID | Requirement |
 |----|------------|
-| FR-22 | The backend shall expose a streaming HTTP endpoint (`POST /chat`) that accepts conversation history and returns an SSE stream. |
+| FR-22 | The backend shall expose a chat endpoint (`POST /chat`) that accepts a user message and session ID and returns the agent's response. Streaming via SSE is the recommended delivery method; returning a complete JSON response is an acceptable fallback. |
 | FR-23 | The agent shall be implemented as a LangGraph `StateGraph` with `call_model` and `tools` nodes and conditional edges. |
 | FR-24 | The agent shall use `gpt-4o-mini` (or equivalent) with LangChain tool-calling integration. |
 | FR-25 | The agent shall autonomously decide whether to call one or more tools, chain tools sequentially, or respond directly. |
-| FR-26 | The agent shall stream tokens using LangGraph's `.astream_events()` API, forwarding `on_chat_model_stream` and `on_tool_start` events to the SSE stream. |
+| FR-26 | The agent should stream tokens using LangGraph's `.astream_events()` API, forwarding `on_chat_model_stream` and `on_tool_start` events to the SSE stream (recommended). A non-streaming `.invoke()` with a complete response is an acceptable implementation. |
 | FR-27 | The backend shall maintain in-memory conversation history per `session_id` for the duration of the server process. |
+| FR-27a | The full conversation history shall be passed to the agent on every turn, enabling multi-turn context: follow-up questions, pronoun references ("what about that last technique?"), and corrections to prior messages shall all be understood correctly. |
 | FR-28 | The agent's system prompt shall establish its role, ethical limits, and instruct it to always cite the source tool used. |
 
 ---
@@ -137,7 +139,7 @@ People seeking mental health support often face long wait times for professional
 | NFR-02 | Reliability | Tool errors must not crash the agent; errors shall be returned as structured messages and explained to the user. |
 | NFR-03 | Safety | Crisis keyword detection shall be evaluated server-side before the LLM responds; a hardcoded crisis resource message shall be injected immediately. |
 | NFR-04 | Security | No raw `eval` in the calculator. All API keys stored in environment variables and excluded from version control via `.gitignore`. |
-| NFR-05 | Usability | The UI must be usable on a modern desktop browser (Chrome, Firefox, Edge) without additional plugins or build steps. |
+| NFR-05 | Usability | The **primary interface is a web-based chat page** usable in a modern desktop browser (Chrome, Firefox, Edge) without additional plugins or build steps. A terminal-based interface is acceptable as a development or demonstration fallback, but the web UI is the expected deliverable. |
 | NFR-06 | Maintainability | Code must be organized into clearly separated modules: `tools/`, `agent/`, `api/`, `knowledge_base/`, `frontend/`. |
 | NFR-07 | Transparency | Every agent response that uses a tool must include the tool name in the SSE event stream so the UI can display it. |
 
@@ -288,7 +290,7 @@ People seeking mental health support often face long wait times for professional
 | # | Question | Owner | Status |
 |---|----------|-------|--------|
 | 1 | Should the crisis keyword list be static (hardcoded) or LLM-evaluated? | Developer | Open |
-| 2 | How extensive should the initial knowledge base be — 5 documents or 20+? | Developer | Open |
+| 2 | How extensive should the initial knowledge base be — 5 documents or 20+? | Developer | **Resolved: minimum 5 real documents required; 6 targeted for MVP** |
 | 3 | Should tool invocation details be visible by default or behind an expand toggle? | Developer | Open |
 | 4 | Should the RAG tool always be called first, or only when the LLM decides to? | Developer | Open |
 
@@ -302,4 +304,5 @@ People seeking mental health support often face long wait times for professional
 - The agent correctly selects the appropriate tool (or no tool) for at least 90% of a defined test set.
 - Streamed responses begin appearing within 3 seconds on a local network.
 - A crisis-signal message triggers the hardcoded crisis resource response every time.
+- A user can ask a follow-up question that references the previous turn (e.g., "Can you give me an example of that?") and receive a contextually correct answer.
 - No API keys are exposed in the frontend or committed to version control.

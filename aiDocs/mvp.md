@@ -10,10 +10,11 @@
 ## 1. MVP Goal
 
 Ship the simplest working version of the mental health companion that demonstrates:
-1. A streaming chat UI in the browser with a persistent disclaimer
+1. A **chat web UI** in the browser with a persistent disclaimer (streaming recommended)
 2. A LangGraph agent that can choose between three tools: **RAG search**, **web search**, and **calculator**
-3. Responses grounded in a curated knowledge base of evidence-based mental health techniques
-4. A hardcoded crisis resource response for distress signals
+3. Responses grounded in a curated knowledge base of **at least 5 real documents**, with **source attribution** in every RAG-based reply
+4. **Multi-turn conversation memory** so follow-up questions work correctly
+5. A hardcoded crisis resource response for distress signals
 
 Everything beyond this core loop is deferred to a later iteration.
 
@@ -25,12 +26,13 @@ Everything beyond this core loop is deferred to a later iteration.
 |---------|-----|----------|
 | Chat UI (single page, no login) | ✅ | |
 | Persistent disclaimer banner | ✅ | |
-| Streaming SSE responses | ✅ | |
-| RAG tool (FAISS + LangChain) | ✅ | |
+| Streaming SSE responses *(recommended)* | ✅ | |
+| RAG tool — FAISS + LangChain, ≥5 real docs | ✅ | |
+| RAG source attribution in agent response | ✅ | |
 | Web search tool (Tavily) | ✅ | |
 | Calculator tool (assessment scoring) | ✅ | |
 | Tool-use badge in chat bubble | ✅ | |
-| In-session conversation history | ✅ | |
+| Conversation memory (multi-turn context) | ✅ | |
 | Crisis keyword detection + hardcoded response | ✅ | |
 | Knowledge base ingest script | ✅ | |
 | Persistent history across sessions | | ✅ |
@@ -116,7 +118,7 @@ ToolsProject/
 - [ ] Verify server starts cleanly
 
 ### Phase 2 — Knowledge Base & RAG Tool (Day 1–2)
-- [ ] Author the 6 knowledge base markdown documents in `knowledge_base/`
+- [ ] Author **at least 5** substantive knowledge base markdown documents in `knowledge_base/` (6 planned; stub/placeholder files do not count)
 - [ ] Implement `ingest.py`:
   - Load all files from `knowledge_base/` with `TextLoader`
   - Split with `RecursiveCharacterTextSplitter` (chunk size 500, overlap 50)
@@ -125,7 +127,8 @@ ToolsProject/
 - [ ] Run ingest script; verify `faiss_index/` files are created on disk
 - [ ] Implement `rag_search.py`:
   - Load existing FAISS index from disk with `FAISS.load_local(...)`
-  - Expose a `rag_search(query: str) -> str` function returning top-4 chunks with source names
+  - Expose a `rag_search(query: str) -> str` function returning top-4 chunks, each prefixed with its source document name
+  - The formatted output must allow the LLM to cite the source in its final response
 - [ ] Write 3+ unit tests for RAG retrieval using known queries
 
 ### Phase 3 — Web Search & Calculator Tools (Day 2)
@@ -349,13 +352,16 @@ async function sendMessage(userText) {
 The MVP is complete when all of the following are true:
 
 - [ ] `GET /health` returns `{"status": "ok", "vector_store": "loaded"}`
-- [ ] Ingest script successfully builds and persists the FAISS index from 6 knowledge base documents
-- [ ] RAG tool returns relevant chunks with source citations for at least 5 mental health queries (unit tested)
+- [ ] Ingest script successfully builds and persists the FAISS index from at least 5 real, substantive knowledge base documents
+- [ ] RAG tool returns relevant chunks with source document names cited for at least 5 mental health queries (unit tested)
+- [ ] Agent's final response includes the source document name when answering from the knowledge base
 - [ ] Calculator tool correctly evaluates at least 10 expressions including PHQ-9 scoring (unit tested)
 - [ ] Web search tool returns structured results for at least 3 queries (tested with live key)
 - [ ] LangGraph agent correctly routes to the right tool for at least 90% of a 10-query test set
+- [ ] A follow-up question referencing the previous turn returns a contextually correct answer (multi-turn memory works)
 - [ ] A crisis keyword message triggers the hardcoded crisis response (not the LLM)
-- [ ] Chat UI streams responses token-by-token in Chrome
+- [ ] Chat web UI is functional and usable in a browser
+- [ ] Streaming works token-by-token in Chrome *(if implemented; complete response is acceptable fallback)*
 - [ ] Tool-use badges display correctly in the chat bubble
 - [ ] Crisis response renders with distinct styling and resource links
 - [ ] Disclaimer banner is visible at all times

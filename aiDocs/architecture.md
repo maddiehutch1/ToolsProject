@@ -1,7 +1,7 @@
 # Architecture Document
 ## Mental Health Companion — Agentic Chat Application
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Date:** March 9, 2026  
 **Status:** Draft
 
@@ -9,12 +9,12 @@
 
 ## 1. System Overview
 
-The application is a single-server Python backend (FastAPI) that serves both the static frontend and the `/chat` API. When a user sends a message, the server checks for crisis signals, then runs a LangGraph agent that may invoke one or more tools before streaming the final response back to the browser via Server-Sent Events.
+The application is a single-server Python backend (FastAPI) that serves both the static frontend and the `/chat` API. When a user sends a message, the server checks for crisis signals, then runs a LangGraph agent — passing the **full conversation history** for multi-turn context — that may invoke one or more tools before returning the response to the browser. **Streaming via Server-Sent Events is the recommended delivery method**; returning a complete JSON response is an acceptable fallback.
 
 ```
 Browser (HTML/CSS/JS)
     │
-    │  POST /chat  ──►  SSE stream (tokens + tool events)
+    │  POST /chat  ──►  SSE stream (recommended) or JSON response
     │
 FastAPI Server
     ├── Crisis detection (pre-LLM gate)
@@ -37,9 +37,9 @@ FAISS Index (local disk — two flat files: .faiss + .pkl)
 | Component | File(s) | Responsibility |
 |-----------|---------|---------------|
 | HTTP server & routes | `backend/main.py` | FastAPI app; `POST /chat`, `GET /health`, static file mount |
-| Agent graph | `backend/agent.py` | LangGraph `StateGraph`; streaming via `.astream_events()` |
+| Agent graph | `backend/agent.py` | LangGraph `StateGraph`; streaming via `.astream_events()` (recommended) or non-streaming `.invoke()` |
 | Crisis gate | `backend/crisis.py` | Keyword detection; returns hardcoded crisis SSE response |
-| RAG tool | `backend/tools/rag_search.py` | FAISS retriever; returns top-4 chunks with source metadata |
+| RAG tool | `backend/tools/rag_search.py` | FAISS retriever; returns top-4 chunks each prefixed with source filename, enabling the agent to cite sources in its response |
 | Web search tool | `backend/tools/web_search.py` | Tavily client; returns top-5 results as formatted string |
 | Calculator tool | `backend/tools/calculator.py` | `simpleeval` wrapper; returns numeric result or error |
 | Ingest script | `backend/ingest.py` | One-time script: load → chunk → embed → persist FAISS index |
@@ -58,26 +58,32 @@ A complete turn from user input to final rendered response:
 1.  User types message and submits (Enter or Send button)
 2.  app.js  →  POST /chat  { message, session_id }
 3.  main.py  →  detect_crisis(message)
-        ├── [crisis detected]  →  stream hardcoded crisis event  →  done
+        ├── [crisis detected]  →  return crisis response  →  done
         └── [no crisis]  →  continue
-4.  main.py  →  append HumanMessage to session history
-5.  main.py  →  StreamingResponse(event_generator())
-6.  agent.py  →  graph.astream_events(state, version="v2")
+4.  main.py  →  retrieve full history from session_store[session_id]
+              →  append new HumanMessage to history
+              →  pass [SystemMessage] + full history to agent
+              ★  this is how multi-turn context works: every prior turn
+                 is present in state["messages"] so follow-up questions,
+                 pronoun references, and corrections resolve correctly
+5.  main.py  →  invoke agent (streaming via StreamingResponse+SSE recommended;
+                               non-streaming JSON response is acceptable fallback)
+6.  agent.py  →  graph.astream_events(state, version="v2")  [if streaming]
+                  graph.invoke(state)                         [if non-streaming]
 7.  LangGraph: call_model node
-        →  llm_with_tools.invoke(messages)
+        →  llm_with_tools.invoke(messages)  ← full history included
         →  OpenAI API returns AIMessage
             ├── [has tool_calls]  →  tools node
-            └── [no tool_calls]  →  END  →  stream tokens
+            └── [no tool_calls]  →  END  →  emit response
 8.  LangGraph: tools node
         →  ToolNode dispatches to matching @tool function
         →  Tool executes; returns string result
         →  ToolMessage appended to state
         →  loop back to call_model
 9.  call_model sees tool result in context
-        →  generates final answer
-        →  streams tokens
-10. agent.py  →  yields { type: "done" }
-11. main.py  →  appends AIMessage to session history
+        →  generates final answer (streams tokens if SSE; otherwise completes)
+10. agent.py  →  yields { type: "done" }  [streaming]  or returns full text  [non-streaming]
+11. main.py  →  appends AIMessage to session_store[session_id]
 12. app.js   →  renders final bubble; hides spinner
 ```
 
@@ -137,7 +143,8 @@ The system prompt is prepended as a `SystemMessage` at the start of every `messa
 - Instructs: prefer `rag_search` for any mental health technique or coping strategy question
 - Instructs: use `web_search` for current events, recent research, or anything not in the knowledge base
 - Instructs: use `calculator` for any numeric scoring (PHQ-9, GAD-7, sleep efficiency)
-- Instructs: always cite which tool was used at the end of the response
+- **Instructs: when answering from RAG results, cite the specific source document by name in the response** (e.g., "According to `cbt_techniques.md`…")
+- Instructs: always note which tool was used when one was invoked
 - Tone guidance: warm, non-judgmental, evidence-based, concise
 
 ---
@@ -185,12 +192,16 @@ List[Document] (top-4 chunks)
         │
         ▼
 Format: "[source_filename]\n{page_content}" joined by "---"
-        │
+        │   ★ The source filename prefix is what allows the LLM to
+        │     cite the document in its final response, e.g.:
+        │     "According to cbt_techniques.md, cognitive restructuring..."
         ▼
 String returned to LangGraph ToolMessage
 ```
 
 ### 5.3 Knowledge Base Documents
+
+> **Minimum requirement: at least 5 real, substantively authored documents.** Stub or placeholder files do not count. The MVP targets 6 documents.
 
 | File | Content Summary |
 |------|----------------|
@@ -204,6 +215,8 @@ String returned to LangGraph ToolMessage
 ---
 
 ## 6. SSE Streaming Protocol
+
+> **Streaming is the recommended response delivery method, not a hard requirement.** A non-streaming implementation that returns the complete agent response as a JSON body is an acceptable fallback. The event types below apply to the streaming implementation.
 
 All SSE events are emitted as `data: {JSON}\n\n` lines. The frontend parses each `data:` line independently.
 
@@ -278,7 +291,7 @@ The `crisis` event type triggers distinct UI treatment:
 
 ---
 
-## 8. Session Management
+## 8. Session Management & Multi-Turn Memory
 
 Session history is maintained **in memory** on the server, keyed by `session_id`.
 
@@ -287,16 +300,32 @@ Session history is maintained **in memory** on the server, keyed by `session_id`
 session_store: dict[str, list[BaseMessage]] = {}
 ```
 
+### How Multi-Turn Context Works
+
+On every request, the server:
+1. Retrieves (or initializes) the history list for the given `session_id`
+2. Appends the new `HumanMessage` to the list
+3. Passes `[SystemMessage] + full_history` as `state["messages"]` to the agent
+
+Because the LLM receives the complete message history on every turn, it can:
+- Answer follow-up questions ("Can you give me an example of that?")
+- Resolve pronoun references ("What about the second one you mentioned?")
+- Incorporate user corrections ("I meant anxiety, not anger")
+
+After the agent finishes, the `AIMessage` is appended to the history so it is available on the next turn.
+
+### Constraints
+
 - `session_id` is a UUID generated by `app.js` on page load
-- On each `POST /chat`, the server retrieves or initializes the history for that session
-- The `HumanMessage` is appended before the agent runs; the final `AIMessage` is appended after streaming completes
-- History is lost when the server restarts (in-scope for MVP; persistence is post-MVP)
+- History accumulates until the server restarts or the session is evicted; no TTL is implemented in the MVP
+- History is lost on server restart (persistence is post-MVP)
+- Very long conversations may exceed the model's context window; this is a known MVP limitation
 
 ---
 
 ## 9. Frontend Architecture
 
-The frontend is a single HTML page with no build step or framework.
+The **primary interface is a web-based chat page** delivered as a single HTML file with no build step or framework. A terminal-based interface (e.g., a Python `input()` loop calling the agent directly) is acceptable as a development or demonstration fallback, but the web UI is the expected deliverable.
 
 ### Files
 
