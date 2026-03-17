@@ -43,7 +43,7 @@ People seeking mental health support often face long wait times for professional
 ### 3.1 In Scope
 - Conversational chat UI (web browser, single-page)
 - Streaming LLM responses via Server-Sent Events (SSE)
-- RAG tool: semantic search over a curated mental health knowledge base (Chroma + LangChain)
+- RAG tool: semantic search over a curated mental health knowledge base (FAISS + LangChain)
 - Web search tool: live search results via the Tavily API
 - Calculator tool: safe evaluation of mathematical expressions (e.g., PHQ-9 / GAD-7 scoring, sleep efficiency)
 - LangGraph agent orchestration loop with multi-tool chaining
@@ -95,7 +95,7 @@ People seeking mental health support often face long wait times for professional
 |----|------------|
 | FR-08 | The tool shall accept a natural-language query and return the most semantically relevant chunks from the knowledge base. |
 | FR-09 | The knowledge base shall be built from curated documents covering: CBT techniques, DBT skills, mindfulness/MBSR exercises, grounding techniques, sleep hygiene (CBT-I), and crisis resources. |
-| FR-10 | The tool shall use LangChain's document pipeline: `TextLoader`/`PyPDFLoader` → `RecursiveCharacterTextSplitter` → `OpenAIEmbeddings` → `Chroma`. |
+| FR-10 | The tool shall use LangChain's document pipeline: `TextLoader` → `RecursiveCharacterTextSplitter` → `OpenAIEmbeddings` → `FAISS`. |
 | FR-11 | The tool shall return the top-k (default: 4) relevant chunks along with their source document name. |
 | FR-12 | The knowledge base shall be built once via an ingest script and persisted to disk; it shall not be rebuilt on every server start. |
 
@@ -173,8 +173,8 @@ People seeking mental health support often face long wait times for professional
 │  └────────────┬──┘ └─────────────┘ └────────────────┘  │
 │               │                                          │
 │  ┌────────────▼──────────────────────────────────────┐  │
-│  │         LangChain + Chroma Vector Store           │  │
-│  │         (persisted to disk at ingest time)        │  │
+│  │         LangChain + FAISS Vector Index            │  │
+│  │         (persisted to disk as flat files)         │  │
 │  │                                                   │  │
 │  │  knowledge_base/                                  │  │
 │  │  ├── cbt_techniques.md                            │  │
