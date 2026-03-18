@@ -1,0 +1,273 @@
+# FAISS Guide
+## Usage in This Project
+
+**Source:** [LangChain FAISS Docs](https://docs.langchain.com/oss/python/integrations/vectorstores/faiss) — verified March 2026  
+**Packages:** `faiss-cpu>=1.8.0`, `langchain-community>=0.3.0`  
+**Used in:** `backend/ingest.py`, `backend/tools/rag_search.py`
+
+---
+
+## Why FAISS
+
+FAISS (Facebook AI Similarity Search) is chosen because:
+- Local flat-file storage — no database server or external service required
+- `save_local` / `load_local` persists the index as two files (`index.faiss` + `index.pkl`) — simple to ship and rebuild
+- LangChain's `FAISS` wrapper integrates directly with document loaders, splitters, and retrievers
+- Sufficient for the 6-document MVP knowledge base — no performance concerns at this scale
+
+---
+
+## Installation
+
+```bash
+pip install faiss-cpu langchain-community
+```
+
+Use `faiss-gpu` only if you have a CUDA-capable GPU and the associated CUDA toolkit installed. For this project, `faiss-cpu` is correct.
+
+---
+
+## Two-Phase Usage
+
+FAISS is used in two separate scripts with distinct responsibilities:
+
+| Script | Phase | What it does |
+|--------|-------|-------------|
+| `backend/ingest.py` | Build | Load docs → chunk → embed → create index → `save_local` |
+| `backend/tools/rag_search.py` | Query | `load_local` → create retriever → expose as `@tool` |
+
+Run `ingest.py` **once** before starting the server. The server only ever reads the index.
+
+---
+
+## Phase 1: Building the Index (`ingest.py`)
+
+```python
+# backend/ingest.py
+import os
+from dotenv import load_dotenv
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings
+
+load_dotenv()
+
+KNOWLEDGE_BASE_DIR = "knowledge_base"
+FAISS_INDEX_PATH = os.getenv("FAISS_INDEX_PATH", "faiss_index")
+
+def ingest():
+    # 1. Load all markdown files
+    loader = DirectoryLoader(
+        KNOWLEDGE_BASE_DIR,
+        glob="*.md",
+        loader_cls=TextLoader,
+        show_progress=True,
+    )
+    documents = loader.load()
+    print(f"Loaded {len(documents)} documents")
+
+    # 2. Split into chunks
+    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+    chunks = splitter.split_documents(documents)
+    print(f"Split into {len(chunks)} chunks")
+
+    # 3. Embed and build FAISS index
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    vectorstore = FAISS.from_documents(chunks, embeddings)
+
+    # 4. Persist to disk
+    vectorstore.save_local(FAISS_INDEX_PATH)
+    print(f"Index saved to '{FAISS_INDEX_PATH}/'")
+    print("Files created:")
+    print(f"  {FAISS_INDEX_PATH}/index.faiss")
+    print(f"  {FAISS_INDEX_PATH}/index.pkl")
+
+if __name__ == "__main__":
+    ingest()
+```
+
+Run with:
+```bash
+python backend/ingest.py
+```
+
+Expected output:
+```
+Loaded 6 documents
+Split into ~45 chunks (depends on document length)
+Index saved to 'faiss_index/'
+Files created:
+  faiss_index/index.faiss
+  faiss_index/index.pkl
+```
+
+---
+
+## Phase 2: Querying the Index (`rag_search.py`)
+
+```python
+# backend/tools/rag_search.py
+import os
+from dotenv import load_dotenv
+from langchain_community.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings
+from langchain_core.tools import tool
+
+load_dotenv()
+
+FAISS_INDEX_PATH = os.getenv("FAISS_INDEX_PATH", "faiss_index")
+
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+
+vectorstore = FAISS.load_local(
+    FAISS_INDEX_PATH,
+    embeddings,
+    allow_dangerous_deserialization=True,   # required for .pkl deserialization
+)
+
+retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
+
+@tool
+def rag_search(query: str) -> str:
+    """Searches the mental health knowledge base for evidence-based techniques, \
+exercises, and guidance. Use this tool for any question about CBT, DBT, mindfulness, \
+grounding, sleep hygiene, or crisis resources."""
+    docs = retriever.invoke(query)
+    if not docs:
+        return "No relevant information found in the knowledge base."
+    results = []
+    for doc in docs:
+        source = doc.metadata.get("source", "unknown")
+        results.append(f"[{source}]\n{doc.page_content}")
+    return "\n\n---\n\n".join(results)
+```
+
+---
+
+## Key Methods Reference
+
+### Building
+
+```python
+# From a list of Document objects
+vectorstore = FAISS.from_documents(documents, embeddings)
+
+# From raw text strings
+vectorstore = FAISS.from_texts(["text 1", "text 2"], embeddings)
+
+# Persist
+vectorstore.save_local("faiss_index")
+```
+
+### Loading
+
+```python
+vectorstore = FAISS.load_local(
+    "faiss_index",
+    embeddings,
+    allow_dangerous_deserialization=True,
+)
+```
+
+> `allow_dangerous_deserialization=True` is required because FAISS uses Python's `pickle` for the docstore. This is safe when the index files are generated by your own `ingest.py` and are not from an untrusted source.
+
+### Querying
+
+```python
+# Returns list[Document]
+docs = vectorstore.similarity_search("what is CBT?", k=4)
+
+# Returns list[tuple[Document, float]] — float is L2 distance (lower = more similar)
+docs_with_scores = vectorstore.similarity_search_with_score("what is CBT?", k=4)
+
+# Via retriever interface (used by @tool)
+retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
+docs = retriever.invoke("what is CBT?")
+```
+
+### Adding Documents After Initial Build
+
+```python
+new_docs = [Document(page_content="...", metadata={"source": "new_file.md"})]
+vectorstore.add_documents(new_docs)
+vectorstore.save_local("faiss_index")  # re-save after adding
+```
+
+---
+
+## Document Metadata and Source Attribution
+
+When LangChain loaders create documents, they set `metadata["source"]` to the file path. Use this for source citation:
+
+```python
+for doc in docs:
+    source = doc.metadata.get("source", "unknown")
+    # source will look like: "knowledge_base/cbt_techniques.md"
+    # Extract just the filename if needed:
+    filename = os.path.basename(source)  # → "cbt_techniques.md"
+```
+
+The `rag_search` tool prefixes each result with `[source]` so the LLM can include it in its response.
+
+---
+
+## Files Produced by `save_local`
+
+```
+faiss_index/
+├── index.faiss   ← Binary FAISS index (the actual vectors)
+└── index.pkl     ← Python pickle of the docstore (text + metadata)
+```
+
+Both files are required to load the index. Add to `.gitignore`:
+```gitignore
+faiss_index/
+```
+
+Rebuild the index whenever knowledge base documents are added or changed.
+
+---
+
+## Testing RAG Retrieval
+
+Before wiring into the agent, test retrieval quality directly:
+
+```python
+# tests/test_rag_search.py
+from backend.tools.rag_search import rag_search
+
+def test_cbt_query():
+    result = rag_search.invoke({"query": "cognitive behavioral therapy techniques"})
+    assert "cbt_techniques" in result.lower() or "cognitive" in result.lower()
+
+def test_crisis_resources():
+    result = rag_search.invoke({"query": "crisis hotline"})
+    assert "988" in result or "crisis" in result.lower()
+
+def test_returns_source():
+    result = rag_search.invoke({"query": "mindfulness exercise"})
+    assert "[" in result  # source attribution prefix
+```
+
+---
+
+## Common Pitfalls
+
+| Pitfall | Fix |
+|---------|-----|
+| `FileNotFoundError` on server start | Run `python backend/ingest.py` before starting the server |
+| `allow_dangerous_deserialization` error | Pass `allow_dangerous_deserialization=True` to `load_local` |
+| Retrieval returns unrelated chunks | Check `chunk_size` — may need to increase it; also check the query phrasing |
+| Embedding model mismatch | If you change from `text-embedding-3-small`, delete `faiss_index/` and re-ingest |
+| Index not updated after KB changes | Delete `faiss_index/` and re-run `python backend/ingest.py` |
+| `.pkl` file missing | Both `index.faiss` and `index.pkl` must be present — `save_local` produces both |
+
+---
+
+## Key References
+
+- [LangChain FAISS Integration](https://docs.langchain.com/oss/python/integrations/vectorstores/faiss)
+- [FAISS GitHub](https://github.com/facebookresearch/faiss)
+- [LangChain Retrievers](https://python.langchain.com/docs/concepts/retrievers/)
+- [LangChain Text Splitters](https://python.langchain.com/docs/how_to/recursive_text_splitter/)
