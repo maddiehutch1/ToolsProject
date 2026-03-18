@@ -38,6 +38,8 @@ Full technical detail: [`aiDocs/architecture.md`](../../aiDocs/architecture.md)
 
 Tests are written **in the same phase as the code they cover** and run as a gate before the next phase begins. Catching breakage early is cheaper than untangling it later.
 
+> Full test plan, `pytest.ini` config, `conftest.py` design, mocking strategy, and fixture details: [`aiDocs/cliTestPlan.md`](../../aiDocs/cliTestPlan.md)
+
 ### Three Tiers
 
 | Tier | What it tests | External deps | When to run |
@@ -46,23 +48,12 @@ Tests are written **in the same phase as the code they cover** and run as a gate
 | **Integration** | A component wired to its real local deps, external APIs mocked | FAISS index on disk | Phases 4, 6, 8 gates |
 | **E2E** | Full stack — real LLM, real APIs, real browser | OpenAI + Tavily keys | Phase 8 gate only |
 
-### pytest Markers
+### Run Commands
 
-```ini
-# pytest.ini
-[pytest]
-asyncio_mode = auto
-markers =
-    unit: isolated, no I/O, always mocked
-    integration: real local deps, external APIs mocked
-    e2e: full stack, real API keys required
-```
-
-Run commands:
 ```bash
-pytest -m unit -v               # fast — no keys needed, run constantly
-pytest -m "unit or integration" -v   # needs FAISS index on disk
-pytest -v                       # everything (needs all API keys)
+pytest -m unit -v                    # fast — no keys needed, run constantly
+pytest -m "unit or integration" -v   # needs FAISS fixture index on disk
+pytest -v                            # everything (needs all API keys)
 ```
 
 ### Test File Map
@@ -71,7 +62,7 @@ pytest -v                       # everything (needs all API keys)
 |-----------|------|---------------|----------------|
 | `tests/test_calculator.py` | unit | 3 | `simple_eval` wrapper, PHQ-9, error handling |
 | `tests/test_crisis.py` | unit | 5 | `detect_crisis` — keyword hits and misses |
-| `tests/test_rag_search.py` | unit | 2 | `rag_search` with mocked retriever; integration with real FAISS |
+| `tests/test_rag_search.py` | unit | 2 | `rag_search` with mocked retriever |
 | `tests/test_web_search.py` | unit | 3 | `web_search` with mocked Tavily client |
 | `tests/test_agent.py` | integration | 4 | Agent graph with mocked LLM — correct tool routing |
 | `tests/test_api.py` | integration | 6 | FastAPI `TestClient` — all SSE event types, crisis gate, session memory |
@@ -112,8 +103,10 @@ pytest -v                       # everything (needs all API keys)
 
 **Test Infrastructure (set up before any feature code)**
 - [ ] Create `pytest.ini` — set `asyncio_mode = auto`, declare `unit`, `integration`, `e2e` markers
-- [ ] Create `tests/conftest.py` — `monkeypatch` fixtures for `OPENAI_API_KEY`, `TAVILY_API_KEY`, `FAISS_INDEX_PATH`; shared `TestClient` fixture
+- [ ] Create `tests/conftest.py` — env var fixtures, shared `TestClient` fixture
 - [ ] Verify `pytest --collect-only` exits 0 (no tests yet, but harness is healthy)
+
+> See [`aiDocs/cliTestPlan.md`](../../aiDocs/cliTestPlan.md) for the full `pytest.ini` config and `conftest.py` implementation.
 
 ### Key Files Created
 ```
@@ -124,33 +117,6 @@ requirements.txt
 .gitignore
 pytest.ini
 tests/conftest.py
-```
-
-### `pytest.ini`
-```ini
-[pytest]
-asyncio_mode = auto
-markers =
-    unit: isolated, no I/O, all external calls mocked
-    integration: real local deps (FAISS), external APIs mocked
-    e2e: full stack, real API keys required
-```
-
-### `tests/conftest.py` (starter)
-```python
-import pytest
-from fastapi.testclient import TestClient
-
-@pytest.fixture(autouse=True)
-def mock_env(monkeypatch):
-    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
-    monkeypatch.setenv("TAVILY_API_KEY", "test-key")
-    monkeypatch.setenv("FAISS_INDEX_PATH", "tests/fixtures/faiss_index")
-
-@pytest.fixture
-def client():
-    from backend.main import app
-    return TestClient(app)
 ```
 
 ### Phase Gate
@@ -590,5 +556,5 @@ data: {"type": "<event_type>", ...fields}\n\n
 | [`aiDocs/prd.md`](../../aiDocs/prd.md) | Full product requirements — *what* and *why* |
 | [`aiDocs/mvp.md`](../../aiDocs/mvp.md) | Detailed build plan, code sketches, Definition of Done |
 | [`aiDocs/architecture.md`](../../aiDocs/architecture.md) | Component design, data flow, graph topology |
-| [`ai/context.md`](../context.md) | AI assistant orientation document |
+| [`aiDocs/context.md`](../../aiDocs/context.md) | AI assistant orientation document |
 | [`ai/guides/`](../guides/) | Package-specific implementation guides |
