@@ -45,12 +45,23 @@ A web-based chat agent providing **evidence-based mental health guidance — not
 
 ---
 
+## Before Implementing Any Phase
+
+**Always read `aiDocs/mvp.md` before writing any code.** It contains:
+- The canonical project folder/file structure (§ Project Structure) — all files must be created at the exact paths listed there
+- The Definition of Done checklist — every item must be satisfied before the project is complete
+- The tech stack with rationale — do not substitute libraries without explicit instruction
+
+Then read the per-phase roadmap file for the phase you are implementing. It will tell you which additional guide files in `ai/guides/` to consult.
+
+---
+
 ## Document Map
 
 | File | Read for... |
 |------|------------|
 | `aiDocs/prd.md` | What the product does, API contracts, success criteria |
-| `aiDocs/mvp.md` | Build phases, tech stack, project structure, Definition of Done |
+| `aiDocs/mvp.md` | Build phases, tech stack, project structure, Definition of Done — **read before any implementation** |
 | `aiDocs/architecture.md` | Component map, graph topology, RAG pipeline, SSE protocol, crisis logic |
 | `aiDocs/cliTestPlan.md` | Test tiers, pytest setup, test inventory, phase gate commands |
 | `ai/roadmaps/2026-03-16-mvp-roadmap.md` | Phase-by-phase build plan with detailed checklists |
