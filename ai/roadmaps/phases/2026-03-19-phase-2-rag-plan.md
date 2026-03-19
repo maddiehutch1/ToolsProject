@@ -1,4 +1,10 @@
-# Phase 2 Plan — Knowledge Base & RAG Tool
+# 2026-03-19 Phase 2 Plan — Knowledge Base & RAG Tool
+
+---
+
+> **Build only what the checklist requires. No abstractions until you need them twice.**
+> If a file, class, or function isn't referenced by something else in this phase, it shouldn't exist yet.
+> Do not add compatibility shims, base classes, config flags, or "just in case" error paths not listed here.
 
 ---
 

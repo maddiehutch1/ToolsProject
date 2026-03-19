@@ -1,4 +1,4 @@
-# Phase 2 Roadmap — Knowledge Base & RAG Tool
+# 2026-03-19 Phase 2 Roadmap — Knowledge Base & RAG Tool
 **Target:** Day 1–2  
 **Status:** Not started
 
@@ -68,7 +68,7 @@ pytest -m unit -v
 ---
 
 ## Previous Phase
-[Phase 1 — Project Scaffolding](./phase-1-scaffolding-roadmap.md)
+[Phase 1 — Project Scaffolding](./2026-03-19-phase-1-scaffolding-roadmap.md)
 
 ## Next Phase
-[Phase 3 — Web Search & Calculator Tools](./phase-3-tools-roadmap.md)
+[Phase 3 — Web Search & Calculator Tools](./2026-03-19-phase-3-tools-roadmap.md)

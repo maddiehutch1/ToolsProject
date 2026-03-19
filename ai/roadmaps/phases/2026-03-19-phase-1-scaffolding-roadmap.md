@@ -1,4 +1,4 @@
-# Phase 1 Roadmap — Project Scaffolding
+# 2026-03-19 Phase 1 Roadmap — Project Scaffolding
 **Target:** Day 1  
 **Status:** Not started
 
@@ -58,4 +58,4 @@ pytest --collect-only   # must exit 0; zero test failures
 ---
 
 ## Next Phase
-[Phase 2 — Knowledge Base & RAG Tool](./phase-2-rag-roadmap.md)
+[Phase 2 — Knowledge Base & RAG Tool](./2026-03-19-phase-2-rag-roadmap.md)
