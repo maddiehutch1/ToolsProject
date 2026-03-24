@@ -21,12 +21,12 @@ Two more working `@tool` functions with full unit test coverage before they are 
 
 **Web Search Tool**
 - [ ] Implement `backend/tools/web_search.py` — `TavilySearch(max_results=5)`, `@tool` decorated `web_search(query: str) -> str`, format output as title + URL + snippet per result, catch all exceptions and return a descriptive error string
-- [ ] Write `tests/test_web_search.py` — mock `TavilySearch.invoke` (no real API calls), 3+ tests: formatted output contains title and URL, empty results handled, API error returns graceful string
+- [ ] Write `tests/test_web_search.py` — mock `_tavily.invoke` (no real API calls), 4+ tests: formatted output contains title and URL, all results present, empty results handled, API error returns graceful string
 - [ ] All tests marked `@pytest.mark.unit`
 
 **Calculator Tool**
 - [ ] Implement `backend/tools/calculator.py` — `simpleeval.simple_eval` with whitelisted functions (`sqrt`, `abs`, `round`, `pow`, `floor`, `ceil`), `@tool` decorated `calculator(expression: str) -> str`, return result as string or descriptive error
-- [ ] Write `tests/test_calculator.py` — 7+ tests: basic arithmetic, PHQ-9 sum, GAD-7 sum, `sqrt(144)`, zero division, invalid syntax, `import os` attempt blocked
+- [ ] Write `tests/test_calculator.py` — 9+ tests: basic arithmetic, PHQ-9 sum, GAD-7 sum, `sqrt(144)`, sleep efficiency formula, zero division, invalid syntax, `import os` attempt blocked
 - [ ] All tests marked `@pytest.mark.unit`
 - [ ] No mocking required — `simpleeval` has no external dependencies
 
@@ -45,8 +45,8 @@ tests/test_calculator.py
 ## Phase Gate
 ```bash
 pytest -m unit -v
-# Expected: test_calculator.py (7+ pass), test_web_search.py (3+ pass),
-#           test_rag_search.py still green (no regressions)
+# Expected: test_calculator.py (9 pass), test_web_search.py (4 pass),
+#           test_rag_search.py (4 — no regressions)
 ```
 
 ---

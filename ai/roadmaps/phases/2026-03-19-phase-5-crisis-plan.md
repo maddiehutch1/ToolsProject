@@ -119,6 +119,24 @@ def test_no_crisis_for_cbt_question():
 def test_no_crisis_for_greeting():
     assert detect_crisis("hello, I need some help") is False
 
+@pytest.mark.unit
+def test_detects_hurt_myself():
+    assert detect_crisis("I've been thinking about hurting myself") is True
+
+@pytest.mark.unit
+def test_detects_dont_want_to_be_here():
+    assert detect_crisis("I don't want to be here anymore") is True
+
+# --- False cases ---
+
+@pytest.mark.unit
+def test_no_crisis_for_depression_mention():
+    assert detect_crisis("I've been feeling really depressed lately") is False
+
+@pytest.mark.unit
+def test_no_crisis_for_stress():
+    assert detect_crisis("work has been really stressful") is False
+
 # --- CRISIS_RESPONSE content ---
 
 @pytest.mark.unit
@@ -135,7 +153,7 @@ def test_crisis_response_contains_crisis_text_line():
 ## Verify
 ```bash
 pytest -m unit -v
-# Expected: 12 tests in test_crisis.py pass
+# Expected: 14 tests in test_crisis.py pass
 # All prior unit tests still green
 
 # Quick manual check — confirm gate fires correctly

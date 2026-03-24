@@ -168,6 +168,17 @@ def test_chat_agent_exception_returns_error_event():
     types = [e["type"] for e in events]
     assert "error" in types
 
+# --- Tool event in stream ---
+
+@pytest.mark.integration
+def test_chat_stream_contains_tool_use_event():
+    with patch("backend.main.run_agent_stream", mock_agent_stream_with_tool):
+        r = client.post("/chat", json={"message": "What is CBT?", "session_id": "s6"})
+    events = parse_sse(r.text)
+    types = [e["type"] for e in events]
+    assert "tool_use" in types
+    assert "tool_done" in types
+
 # --- Validation ---
 
 @pytest.mark.integration

@@ -81,7 +81,10 @@ __pycache__/
 *.pyc
 *.pyo
 .pytest_cache/
+scratch/
 ```
+
+> **Before your first commit:** if `.env` was ever staged (even briefly), run `git rm --cached .env` to remove it from Git's index before committing. `.gitignore` only prevents future tracking — it does not untrack a file that was already added.
 
 ---
 
@@ -99,18 +102,29 @@ markers =
 
 ---
 
+## `backend/__init__.py`
+Empty file — makes `backend` a package so `from backend.main import app` works across all phases.
+
 ## `tests/conftest.py`
-Full implementation is in `aiDocs/cliTestPlan.md`. Minimum required: env var fixtures and a shared `TestClient`.
+Full implementation is in `aiDocs/cliTestPlan.md`. The `mock_env` fixture must be `autouse=True` so fake API keys are set before any module that reads them is imported.
 
 ```python
 import pytest
-from fastapi.testclient import TestClient
-from backend.main import app
+
+@pytest.fixture(autouse=True)
+def mock_env(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("TAVILY_API_KEY", "test-key")
+    monkeypatch.setenv("FAISS_INDEX_PATH", "tests/fixtures/faiss_index")
 
 @pytest.fixture
 def client():
+    from fastapi.testclient import TestClient
+    from backend.main import app
     return TestClient(app)
 ```
+
+> Imports inside `client()` are deferred so they happen after `mock_env` sets env vars.
 
 ---
 

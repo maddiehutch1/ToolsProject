@@ -174,6 +174,25 @@ def test_run_agent_stream_yields_token_and_done(mock_llm):
     types = [e["type"] for e in events]
     assert "token" in types
     assert types[-1] == "done"
+
+@pytest.mark.integration
+def test_run_agent_stream_yields_tool_events(mock_llm):
+    from backend.agent import run_agent_stream
+
+    async def fake_astream_events(state, version):
+        yield {"event": "on_tool_start", "name": "rag_search", "data": {}}
+        yield {"event": "on_tool_end", "name": "rag_search", "data": {}}
+        yield {"event": "on_chat_model_stream", "data": {"chunk": MagicMock(content="Here is info.")}, "name": ""}
+
+    with patch("backend.agent.graph.astream_events", fake_astream_events):
+        async def collect():
+            return [e async for e in run_agent_stream([HumanMessage(content="What is CBT?")])]
+
+        events = asyncio.get_event_loop().run_until_complete(collect())
+
+    types = [e["type"] for e in events]
+    assert "tool_use" in types
+    assert "tool_done" in types
 ```
 
 ---
@@ -216,6 +235,8 @@ python scratch/smoke_agent.py
 ## Verify
 ```bash
 pytest -m "unit or integration" -v
-# Expected: all prior unit tests green + 5 new integration tests pass
+# Expected: all prior unit tests green + 6 new integration tests pass
 # No API keys consumed — ChatOpenAI is mocked
 ```
+
+> `scratch/` is in `.gitignore` — the smoke script will not be committed.

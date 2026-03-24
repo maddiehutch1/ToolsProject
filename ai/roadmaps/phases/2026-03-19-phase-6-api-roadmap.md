@@ -37,10 +37,11 @@ A working `POST /chat` SSE endpoint that streams the full agent event protocol, 
 
 **Integration Tests — `tests/test_api.py`**
 - [ ] Mock `run_agent_stream` to yield a fixed event sequence — no real LLM or tool calls
-- [ ] `GET /health` → `{"status": "ok", "vector_store": "loaded"}` (2 tests: keys present, correct values)
+- [ ] `GET /health` → `{"status": "ok", "vector_store": "loaded"}` (2 tests: key present, correct values)
 - [ ] `POST /chat` normal message → stream contains `token` event and `done` event
+- [ ] `POST /chat` with tool response → stream contains `tool_use` and `tool_done` events
 - [ ] `POST /chat` crisis keyword → stream contains `crisis` event, no `token` events
-- [ ] `POST /chat` same `session_id` twice → second response reflects prior turn (session memory)
+- [ ] `POST /chat` same `session_id` twice → session memory persisted (history length ≥ 2)
 - [ ] `POST /chat` agent raises exception → stream contains `error` event
 - [ ] `POST /chat` missing `message` field → HTTP 422
 - [ ] All marked `@pytest.mark.integration`
@@ -61,7 +62,7 @@ tests/test_api.py   (new)
 ## Phase Gate
 ```bash
 pytest -m "unit or integration" -v
-# Expected: all unit tests green + test_agent.py + test_api.py pass
+# Expected: all unit tests green + test_agent.py (6) + test_api.py (8) pass
 # No API keys consumed — all external calls are mocked
 ```
 

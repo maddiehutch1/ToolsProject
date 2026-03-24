@@ -36,8 +36,7 @@ A compiled LangGraph `StateGraph` that routes across all three tools and streams
   - After loop → yield `{"type": "done"}`
 
 **Integration Tests**
-- [ ] Write `tests/test_agent.py` — mock `ChatOpenAI`, 4+ tests: routes to `rag_search` for mental-health queries, routes to `calculator` for math, routes to `web_search` for current-events, returns direct answer when no tool needed
-- [ ] Test that `run_agent_stream` yields at least one `token` event and a final `done` event
+- [ ] Write `tests/test_agent.py` — mock `ChatOpenAI`, 6 tests: routes to `rag_search` for mental-health queries, routes to `calculator` for math, routes to `web_search` for current-events, returns direct answer when no tool needed, `run_agent_stream` yields `token` + `done` events, `run_agent_stream` yields `tool_use` + `tool_done` events when tool fires
 - [ ] All tests marked `@pytest.mark.integration`
 
 **Manual Smoke Test**
@@ -56,7 +55,7 @@ tests/test_agent.py
 ## Phase Gate
 ```bash
 pytest -m "unit or integration" -v
-# Expected: all prior unit tests still green + new agent integration tests pass
+# Expected: all prior unit tests still green + 6 agent integration tests pass
 # No API keys consumed if mocking is correct
 ```
 

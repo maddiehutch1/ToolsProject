@@ -23,7 +23,7 @@ A clean repo skeleton that runs with no errors — including a working test harn
 - [ ] Initialize folder structure per `aiDocs/mvp.md §Project Structure`
 - [ ] Create `requirements.txt` with all pinned dependencies (see Dependency Reference in main roadmap)
 - [ ] Create `.env.example` with `OPENAI_API_KEY` and `TAVILY_API_KEY` placeholders
-- [ ] Create `.gitignore` — exclude `.env`, `faiss_index/`, `__pycache__/`, `*.pyc`
+- [ ] Create `.gitignore` — exclude `.env`, `faiss_index/`, `__pycache__/`, `*.pyc`, `scratch/`
 
 **FastAPI Skeleton**
 - [ ] `backend/main.py` — FastAPI app, `GET /health` returning `{"status": "ok"}`
@@ -39,6 +39,7 @@ A clean repo skeleton that runs with no errors — including a working test harn
 
 ## Key Files Created
 ```
+backend/__init__.py
 backend/main.py
 backend/models.py
 requirements.txt

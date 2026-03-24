@@ -34,9 +34,9 @@ A hard pre-LLM safety gate that intercepts crisis messages before the agent runs
 
 **Unit Tests**
 - [ ] Write `tests/test_crisis.py`:
-  - 6+ tests — `detect_crisis` returns `True` for keyword variants (mixed case, mid-sentence)
-  - 4+ tests — `detect_crisis` returns `False` for normal messages
-  - 1 test — `CRISIS_RESPONSE` contains `"988"` and `"741741"`
+  - 8 tests — `detect_crisis` returns `True` for all keyword variants (mixed case, mid-sentence, each keyword)
+  - 4 tests — `detect_crisis` returns `False` for normal messages
+  - 2 tests — `CRISIS_RESPONSE` contains `"988"` and `"741741"`
   - All marked `@pytest.mark.unit`
   - No mocking needed — `crisis.py` is pure Python, zero external dependencies
 
@@ -54,7 +54,7 @@ tests/test_crisis.py       (new)
 ## Phase Gate
 ```bash
 pytest -m unit -v
-# Expected: all prior unit tests green + test_crisis.py (11+ tests) passes
+# Expected: all prior unit tests green + test_crisis.py (14 tests) passes
 ```
 
 ---

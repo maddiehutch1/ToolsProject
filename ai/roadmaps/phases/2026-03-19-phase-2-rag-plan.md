@@ -42,7 +42,7 @@ if __name__ == "__main__":
 ---
 
 ## `backend/tools/rag_search.py`
-Loads the pre-built FAISS index and exposes a `@tool` for the agent.
+Loads the pre-built FAISS index and exposes a `@tool` for the agent. The load is wrapped in `try/except` so the module imports cleanly when the index is missing — unit tests rely on this.
 
 ```python
 from dotenv import load_dotenv
@@ -53,19 +53,27 @@ import os
 
 load_dotenv()
 
-_embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-_vectorstore = FAISS.load_local(
-    os.getenv("FAISS_INDEX_PATH", "faiss_index"),
-    _embeddings,
-    allow_dangerous_deserialization=True,
-)
-_retriever = _vectorstore.as_retriever(search_kwargs={"k": 4})
+_vectorstore = None
+retriever = None
+
+try:
+    _embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    _vectorstore = FAISS.load_local(
+        os.getenv("FAISS_INDEX_PATH", "faiss_index"),
+        _embeddings,
+        allow_dangerous_deserialization=True,
+    )
+    retriever = _vectorstore.as_retriever(search_kwargs={"k": 4})
+except Exception:
+    pass  # retriever stays None; health check reports "not_loaded"
 
 @tool
 def rag_search(query: str) -> str:
     """Searches the mental health knowledge base for evidence-based techniques.
     Use for any question about CBT, DBT, mindfulness, grounding, sleep, or crisis resources."""
-    docs = _retriever.invoke(query)
+    if retriever is None:
+        return "Knowledge base unavailable."
+    docs = retriever.invoke(query)
     if not docs:
         return "No relevant documents found."
     return "\n---\n".join(
@@ -74,7 +82,7 @@ def rag_search(query: str) -> str:
     )
 ```
 
-> If `faiss_index/` is missing, this module will raise on import. `GET /health` should catch this and report `"vector_store": "not_loaded"` — handled in Phase 6.
+> `retriever = None` at module level is the mock target: `patch("backend.tools.rag_search.retriever", mock_retriever)`. Unit tests patch it; integration tests use the real fixture index.
 
 ---
 
@@ -94,7 +102,7 @@ MOCK_DOCS = [
 def mock_faiss_load(monkeypatch):
     mock_retriever = MagicMock()
     mock_retriever.invoke.return_value = MOCK_DOCS
-    with patch("backend.tools.rag_search._retriever", mock_retriever):
+    with patch("backend.tools.rag_search.retriever", mock_retriever):
         yield mock_retriever
 
 @pytest.mark.unit
@@ -116,6 +124,12 @@ def test_empty_results_returns_fallback(mock_faiss_load):
     from backend.tools.rag_search import rag_search
     result = rag_search.invoke("unrelated topic")
     assert "No relevant documents found." in result
+
+@pytest.mark.unit
+def test_chunks_separated_by_divider(mock_faiss_load):
+    from backend.tools.rag_search import rag_search
+    result = rag_search.invoke("coping strategies")
+    assert "---" in result
 ```
 
 ---
@@ -134,15 +148,53 @@ Each file must be substantive — no placeholder text. Minimum ~200 words per fi
 
 ---
 
+## `tests/fixtures/` — Test FAISS Index
+Integration tests in Phases 4 and 6 need a real FAISS index on disk without calling OpenAI. Build it once from a minimal document and commit it.
+
+```bash
+# Create fixture directory and a minimal KB doc
+mkdir tests/fixtures
+```
+
+```markdown
+<!-- tests/fixtures/sample_kb.md -->
+# Sample Knowledge Base
+Cognitive Behavioral Therapy (CBT) is a structured, goal-oriented therapy that helps
+individuals identify and change negative thought patterns and behaviors.
+The 5-4-3-2-1 grounding technique uses the five senses to anchor attention to the present.
+```
+
+```bash
+# Build fixture index (run once — requires OPENAI_API_KEY)
+python -c "
+from langchain_community.document_loaders import TextLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from dotenv import load_dotenv
+load_dotenv()
+docs = TextLoader('tests/fixtures/sample_kb.md').load()
+chunks = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50).split_documents(docs)
+FAISS.from_documents(chunks, OpenAIEmbeddings(model='text-embedding-3-small')).save_local('tests/fixtures/faiss_index')
+print('Fixture index built.')
+"
+
+# Commit the fixture index — it's small (~50KB) and lets integration tests run without API keys
+git add tests/fixtures/faiss_index
+```
+
+---
+
 ## Verify
 ```bash
-# Build the index (requires OPENAI_API_KEY)
+# Build the production index (requires OPENAI_API_KEY)
 python backend/ingest.py
 
-# Confirm index files exist
+# Confirm production index files exist
 ls faiss_index/
 # Expected: index.faiss  index.pkl
 
 # Run unit tests (no API keys needed — retriever is mocked)
 pytest -m unit -v
+# Expected: 4 tests in test_rag_search.py pass
 ```

@@ -37,8 +37,13 @@ A working FAISS vector index built from real knowledge base documents, queryable
 - [ ] Create `backend/tools/__init__.py` (empty)
 
 **Unit Tests**
-- [ ] Write `tests/test_rag_search.py` — mock the retriever (no FAISS or OpenAI hits), 3+ tests: formatted `[source]\ncontent` output, empty results handled, source attribution present
+- [ ] Write `tests/test_rag_search.py` — mock the retriever (no FAISS or OpenAI hits), 4+ tests: formatted `[source]\ncontent` output, chunks separated by `---`, empty results handled, source attribution present
 - [ ] All tests marked `@pytest.mark.unit`
+
+**Test Fixture Index**
+- [ ] Create `tests/fixtures/sample_kb.md` — minimal document (2–3 sentences)
+- [ ] Run one-time fixture build script (see plan) — saves to `tests/fixtures/faiss_index/`
+- [ ] Commit `tests/fixtures/faiss_index/` — integration tests in Phases 4 and 6 need it on disk without API keys
 
 ---
 
@@ -62,7 +67,7 @@ faiss_index/             (generated, not in git)
 ## Phase Gate
 ```bash
 pytest -m unit -v
-# Expected: test_rag_search.py passes; all Phase 1 tests still green
+# Expected: test_rag_search.py (4 tests) passes; all Phase 1 tests still green
 ```
 
 ---

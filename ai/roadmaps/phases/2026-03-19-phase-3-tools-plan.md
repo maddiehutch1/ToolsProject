@@ -18,13 +18,13 @@ from langchain_core.tools import tool
 
 load_dotenv()
 
-_search = TavilySearch(max_results=5)
+_tavily = TavilySearch(max_results=5)
 
 @tool
 def web_search(query: str) -> str:
     """Searches the web for current information not in the knowledge base."""
     try:
-        results = _search.invoke(query)
+        results = _tavily.invoke(query)
         if not results:
             return "No results found."
         lines = []
@@ -50,7 +50,7 @@ MOCK_RESULTS = [
 
 @pytest.fixture(autouse=True)
 def mock_tavily(monkeypatch):
-    with patch("backend.tools.web_search._search") as mock:
+    with patch("backend.tools.web_search._tavily") as mock:
         mock.invoke.return_value = MOCK_RESULTS
         yield mock
 
@@ -60,6 +60,13 @@ def test_output_contains_title_and_url(mock_tavily):
     result = web_search.invoke("cognitive behavioral therapy")
     assert "What is CBT?" in result
     assert "https://example.com/cbt" in result
+
+@pytest.mark.unit
+def test_all_results_present_in_output(mock_tavily):
+    from backend.tools.web_search import web_search
+    result = web_search.invoke("mindfulness")
+    assert "Mindfulness research" in result
+    assert "https://example.com/mindfulness" in result
 
 @pytest.mark.unit
 def test_empty_results_returns_fallback(mock_tavily):
@@ -152,6 +159,12 @@ def test_invalid_syntax():
 def test_import_attempt_blocked():
     result = calculator.invoke("__import__('os').system('ls')")
     assert "Error" in result
+
+@pytest.mark.unit
+def test_sleep_efficiency():
+    # sleep efficiency = (time asleep / time in bed) * 100
+    result = calculator.invoke("(7/8)*100")
+    assert result == "87.5"
 ```
 
 ---
@@ -162,10 +175,7 @@ def test_import_attempt_blocked():
 pytest -m unit -v
 
 # Expected output:
-# tests/test_calculator.py::test_basic_addition PASSED
-# tests/test_calculator.py::test_phq9_sum PASSED
-# ... (8 total)
-# tests/test_web_search.py::test_output_contains_title_and_url PASSED
-# ... (3 total)
-# tests/test_rag_search.py::* PASSED  (no regressions)
+# tests/test_calculator.py::* PASSED  (9 total)
+# tests/test_web_search.py::* PASSED  (4 total)
+# tests/test_rag_search.py::* PASSED  (4 — no regressions)
 ```
