@@ -1,6 +1,6 @@
 # 2026-03-19 Phase 1 Roadmap — Project Scaffolding
 **Target:** Day 1  
-**Status:** Not started
+**Status:** Complete
 
 ---
 
@@ -20,20 +20,20 @@ A clean repo skeleton that runs with no errors — including a working test harn
 ## Checklist
 
 **Repo & Config**
-- [ ] Initialize folder structure per `aiDocs/mvp.md §Project Structure`
-- [ ] Create `requirements.txt` with all pinned dependencies (see Dependency Reference in main roadmap)
-- [ ] Create `.env.example` with `OPENAI_API_KEY` and `TAVILY_API_KEY` placeholders
-- [ ] Create `.gitignore` — exclude `.env`, `faiss_index/`, `__pycache__/`, `*.pyc`, `scratch/`
+- [x] Initialize folder structure per `aiDocs/mvp.md §Project Structure`
+- [x] Create `requirements.txt` with all pinned dependencies (see Dependency Reference in main roadmap)
+- [x] Create `.env.example` with `OPENAI_API_KEY` and `TAVILY_API_KEY` placeholders
+- [x] Create `.gitignore` — exclude `.env`, `faiss_index/`, `__pycache__/`, `*.pyc`, `scratch/`
 
 **FastAPI Skeleton**
-- [ ] `backend/main.py` — FastAPI app, `GET /health` returning `{"status": "ok"}`
-- [ ] `backend/models.py` — `ChatRequest` (message, session_id) Pydantic model
-- [ ] Verify server starts: `uvicorn backend.main:app --reload --port 8000`
+- [x] `backend/main.py` — FastAPI app, `GET /health` returning `{"status": "ok"}`
+- [x] `backend/models.py` — `ChatRequest` (message, session_id) Pydantic model
+- [x] Verify server starts: `uvicorn backend.main:app --reload --port 8000`
 
 **Test Infrastructure**
-- [ ] `pytest.ini` — `asyncio_mode = auto`, declare `unit`, `integration`, `e2e` markers
-- [ ] `tests/conftest.py` — env var fixtures, shared `TestClient` fixture
-- [ ] Verify `pytest --collect-only` exits 0
+- [x] `pytest.ini` — `asyncio_mode = auto`, declare `unit`, `integration`, `e2e` markers
+- [x] `tests/conftest.py` — env var fixtures, shared `TestClient` fixture
+- [x] Verify `pytest --collect-only` exits 0
 
 ---
 
