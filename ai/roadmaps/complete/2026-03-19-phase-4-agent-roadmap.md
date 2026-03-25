@@ -1,6 +1,6 @@
 # 2026-03-19 Phase 4 Roadmap — LangGraph Agent
 **Target:** Day 3  
-**Status:** Not started
+**Status:** Complete
 
 ---
 
@@ -19,7 +19,7 @@ A compiled LangGraph `StateGraph` that routes across all three tools and streams
 ## Checklist
 
 **Agent Graph**
-- [ ] Implement `backend/agent.py`:
+- [x] Implement `backend/agent.py`:
   - `AgentState` TypedDict: `{ "messages": Annotated[list[BaseMessage], operator.add] }`
   - `call_model` node: `llm_with_tools.invoke(state["messages"])`
   - `tools` node: `ToolNode([rag_search, web_search, calculator])`
@@ -28,7 +28,7 @@ A compiled LangGraph `StateGraph` that routes across all three tools and streams
   - Compile: `graph = builder.compile()`
 
 **Streaming Generator**
-- [ ] Implement `run_agent_stream(messages)` async generator in `backend/agent.py`:
+- [x] Implement `run_agent_stream(messages)` async generator in `backend/agent.py`:
   - `async for event in graph.astream_events(state, version="v2")`
   - `on_chat_model_stream` → yield `{"type": "token", "content": chunk}`
   - `on_tool_start` → yield `{"type": "tool_use", "tool": name}`
@@ -36,11 +36,11 @@ A compiled LangGraph `StateGraph` that routes across all three tools and streams
   - After loop → yield `{"type": "done"}`
 
 **Integration Tests**
-- [ ] Write `tests/test_agent.py` — mock `ChatOpenAI`, 6 tests: routes to `rag_search` for mental-health queries, routes to `calculator` for math, routes to `web_search` for current-events, returns direct answer when no tool needed, `run_agent_stream` yields `token` + `done` events, `run_agent_stream` yields `tool_use` + `tool_done` events when tool fires
-- [ ] All tests marked `@pytest.mark.integration`
+- [x] Write `tests/test_agent.py` — mock `ChatOpenAI`, 6 tests: routes to `rag_search` for mental-health queries, routes to `calculator` for math, routes to `web_search` for current-events, returns direct answer when no tool needed, `run_agent_stream` yields `token` + `done` events, `run_agent_stream` yields `tool_use` + `tool_done` events when tool fires
+- [x] All tests marked `@pytest.mark.integration`
 
 **Manual Smoke Test**
-- [ ] Run 5+ live prompts covering all three tool paths in a scratch script before wiring to HTTP
+- [x] Run 5+ live prompts covering all three tool paths in a scratch script before wiring to HTTP
 
 ---
 
