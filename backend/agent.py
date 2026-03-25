@@ -1,7 +1,7 @@
 import operator
 from typing import Annotated
 from dotenv import load_dotenv
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import BaseMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
@@ -12,6 +12,18 @@ from backend.tools.web_search import web_search
 from backend.tools.calculator import calculator
 
 load_dotenv()
+
+SYSTEM_PROMPT = (
+    "You are a psychoeducational mental health companion. "
+    "You are NOT a therapist and do not provide diagnosis or treatment.\n\n"
+    "Guidelines:\n"
+    "- For questions about mental health techniques (CBT, DBT, mindfulness, grounding, sleep), "
+    "always use the rag_search tool and cite the source document by name.\n"
+    "- For current research or information not in the knowledge base, use web_search.\n"
+    "- For PHQ-9, GAD-7, or any arithmetic, use the calculator tool.\n"
+    "- Always state which tool you used and cite your source.\n"
+    "- Maintain a warm, non-judgmental, evidence-based tone at all times."
+)
 
 
 # --- State ---
@@ -54,7 +66,7 @@ graph = builder.compile()
 # --- Streaming generator ---
 
 async def run_agent_stream(messages: list[BaseMessage]):
-    state = {"messages": messages}
+    state = {"messages": [SystemMessage(content=SYSTEM_PROMPT)] + messages}
     async for event in graph.astream_events(state, version="v2"):
         kind = event["event"]
         if kind == "on_chat_model_stream":

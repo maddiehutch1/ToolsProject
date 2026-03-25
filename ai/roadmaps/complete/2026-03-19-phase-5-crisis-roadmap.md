@@ -1,6 +1,6 @@
 # 2026-03-19 Phase 5 Roadmap — Crisis Detection & System Prompt
 **Target:** Day 3  
-**Status:** Not started
+**Status:** Complete
 
 ---
 
@@ -19,21 +19,21 @@ A hard pre-LLM safety gate that intercepts crisis messages before the agent runs
 ## Checklist
 
 **Crisis Detection**
-- [ ] Implement `backend/crisis.py`:
-  - Keyword list: `["want to die", "end my life", "kill myself", "self-harm", "suicidal", "hurt myself", "don't want to be here"]`
+- [x] Implement `backend/crisis.py`:
+  - Keyword list: `["want to die", "end my life", "kill myself", "self-harm", "suicidal", "hurt myself", "hurting myself", "don't want to be here"]`
   - `detect_crisis(message: str) -> bool` — case-insensitive substring match
   - `CRISIS_RESPONSE` string constant — must include 988 Lifeline, Crisis Text Line (text HOME to 741741), NAMI Helpline, SAMHSA National Helpline
 
 **System Prompt**
-- [ ] Add `SYSTEM_PROMPT` constant to `backend/agent.py`:
+- [x] Add `SYSTEM_PROMPT` constant to `backend/agent.py`:
   - Role: psychoeducational companion, not a therapist
   - Prefer `rag_search` for mental health technique questions
   - Always cite which tool and source document was used
   - Warm, non-judgmental, evidence-based tone
-- [ ] Prepend `SystemMessage(content=SYSTEM_PROMPT)` to messages inside `run_agent_stream`
+- [x] Prepend `SystemMessage(content=SYSTEM_PROMPT)` to messages inside `run_agent_stream`
 
 **Unit Tests**
-- [ ] Write `tests/test_crisis.py`:
+- [x] Write `tests/test_crisis.py`:
   - 8 tests — `detect_crisis` returns `True` for all keyword variants (mixed case, mid-sentence, each keyword)
   - 4 tests — `detect_crisis` returns `False` for normal messages
   - 2 tests — `CRISIS_RESPONSE` contains `"988"` and `"741741"`
