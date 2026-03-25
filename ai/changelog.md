@@ -4,7 +4,7 @@ All product changes are documented here. Entries are ordered newest-first. Phase
 
 ---
 
-## [Patch] – 2026-03-25 · Markdown Rendering & Changelog
+## [Patch] – 2026-03-25 · Markdown Rendering, Bubble Layout & Changelog
 _No commit yet_
 
 ### Changed
@@ -12,6 +12,7 @@ _No commit yet_
 - `frontend/app.js` – Added `renderMarkdown()` helper using `marked.parse()` with `breaks: true`
 - `frontend/app.js` – `appendBubble()` now sets `innerHTML` via `renderMarkdown()` instead of `textContent`, so bold, bullets, headers, and code blocks display correctly
 - `frontend/app.js` – Streaming token handler now accumulates raw markdown in a `rawText` variable and re-renders the full bubble on each token (prevents asterisks and hyphens from appearing as raw characters mid-stream)
+- `frontend/style.css` – Added scoped `.bubble` markdown styles: `p`, `ul`, `ol`, `li`, `h1–h6`, `code`, and `pre` rules restore margins/padding stripped by the global reset, keeping all rendered content inside the bubble
 
 ### Added
 - `ai/changelog.md` – This file; tracks all product changes going forward, sourced from git history for Phases 1–7

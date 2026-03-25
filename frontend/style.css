@@ -37,6 +37,44 @@ body {
   word-break: break-word;
 }
 
+.bubble p { margin: 0 0 0.5rem; }
+.bubble p:last-child { margin-bottom: 0; }
+
+.bubble ul,
+.bubble ol {
+  margin: 0.25rem 0 0.5rem;
+  padding-left: 1.4rem;
+}
+
+.bubble li { margin-bottom: 0.2rem; }
+
+.bubble h1, .bubble h2, .bubble h3,
+.bubble h4, .bubble h5, .bubble h6 {
+  margin: 0.5rem 0 0.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.bubble code {
+  background: #edf2f7;
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.88em;
+}
+
+.bubble pre {
+  background: #edf2f7;
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.8rem;
+  overflow-x: auto;
+  margin: 0.4rem 0;
+}
+
+.bubble pre code {
+  background: none;
+  padding: 0;
+}
+
 .bubble.user {
   align-self: flex-end;
   background: #3182ce;
