@@ -8,3 +8,4 @@ class ChatRequest(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str
+    vector_store: str = "not_loaded"
