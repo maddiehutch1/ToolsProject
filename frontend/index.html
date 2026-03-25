@@ -1,5 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><title>Mental Health Companion</title></head>
-<body><p>Frontend coming in Phase 7.</p></body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mental Health Companion</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="disclaimer">
+    This tool is not a substitute for professional mental health care.
+  </div>
+
+  <div id="chat-container">
+    <div id="messages"></div>
+  </div>
+
+  <div id="input-area">
+    <input id="user-input" type="text" placeholder="Type a message..." autocomplete="off" />
+    <button id="send-btn">Send</button>
+  </div>
+
+  <script src="app.js"></script>
+</body>
 </html>
