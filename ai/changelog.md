@@ -4,6 +4,15 @@ All product changes are documented here. Entries are ordered newest-first. Phase
 
 ---
 
+## [Patch] – 2026-03-25 · Innerly Rebrand & UI Polish
+_No commit yet_
+
+### Changed
+- `frontend/index.html` – Renamed app to "Innerly"; added branded header with SVG leaf logo, app name, and tagline; updated disclaimer with info icon and 988 mention; replaced text Send button with icon button; updated `<title>` and placeholder text
+- `frontend/style.css` – Full visual redesign: CSS custom properties for the full blue palette, Inter font, gradient background, white header with drop shadow, pill-shaped input, circular send button, refined bubble shadows and spacing, and scoped `user code` style for contrast inside blue bubbles
+
+---
+
 ## [Patch] – 2026-03-25 · Markdown Rendering, Bubble Layout & Changelog
 _No commit yet_
 
