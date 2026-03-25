@@ -1,0 +1,33 @@
+---
+description: Orient every agent session to the project before making changes
+alwaysApply: true
+---
+
+# Project Orientation
+
+Before writing or editing any code in this project, read `aiDocs/context.md`.
+
+It contains:
+- What the product is and what is explicitly out of scope
+- The full tech stack and why each library was chosen
+- Key conventions (SSE event schema, crisis gate behavior, tool naming, `.env` rules)
+- A document map telling you which file to consult for deeper detail on any topic
+
+## Quick Reference
+
+| Need to know... | Read... |
+|-----------------|---------|
+| What to build and why | `aiDocs/prd.md` |
+| Folder structure, Definition of Done | `aiDocs/mvp.md` |
+| Component design, data flow, graph topology | `aiDocs/architecture.md` |
+| Test tiers, pytest config, phase gates | `aiDocs/cliTestPlan.md` |
+| Phase-by-phase build checklist | `ai/roadmaps/2026-03-16-mvp-roadmap.md` |
+| Per-package implementation patterns | `ai/guides/` |
+| All product changes made to date | `ai/changelog.md` |
+
+## Non-Negotiables
+
+- Never substitute a library from the tech stack without explicit instruction
+- API keys live in `.env` only — never commit them
+- The crisis gate is a hard pre-LLM keyword check — do not delegate it to the model
+- After any code change, update `ai/changelog.md` (see `.cursor/rules/changelog.mdc`)

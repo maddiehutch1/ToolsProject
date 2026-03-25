@@ -1,0 +1,28 @@
+---
+description: Keep ai/changelog.md updated whenever code files are changed
+alwaysApply: true
+---
+
+# Changelog Maintenance
+
+Whenever you add, modify, or delete a file in `backend/`, `frontend/`, `tests/`, `knowledge_base/`, or the project root (e.g. `requirements.txt`, `.env.example`), you **must** update `ai/changelog.md`.
+
+## Format
+
+Add a new entry at the top of the file (below the intro paragraph, above the previous top entry):
+
+```markdown
+## [Patch] – YYYY-MM-DD · Short title
+_No commit yet_ (or **Commit:** `abc1234` if committed)
+
+### Added / Changed / Removed
+- `path/to/file.py` – One-line description of what changed and why
+```
+
+## Rules
+
+- Use `### Added` for new files, `### Changed` for edits, `### Removed` for deletions
+- One bullet per file changed — be specific about what was modified, not just that it was touched
+- Always use today's date
+- If a phase commit is being made, replace `_No commit yet_` with the commit hash after committing
+- Do not batch unrelated changes into one entry — use separate entries if changes serve different purposes

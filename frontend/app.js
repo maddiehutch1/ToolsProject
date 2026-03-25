@@ -13,10 +13,16 @@ function scrollToBottom() {
   container.scrollTop = container.scrollHeight;
 }
 
+function renderMarkdown(text) {
+  return marked.parse(text, { breaks: true });
+}
+
 function appendBubble(role, text = '') {
   const div = document.createElement('div');
   div.className = `bubble ${role}`;
-  div.textContent = text;
+  if (text) {
+    div.innerHTML = renderMarkdown(text);
+  }
   messagesEl.appendChild(div);
   scrollToBottom();
   return div;
@@ -68,6 +74,7 @@ async function sendMessage() {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
+    let rawText = '';
 
     while (true) {
       const { done, value } = await reader.read();
@@ -87,7 +94,8 @@ async function sendMessage() {
             messagesEl.appendChild(agentBubble);
             bubbleAdded = true;
           }
-          agentBubble.textContent += event.content;
+          rawText += event.content;
+          agentBubble.innerHTML = renderMarkdown(rawText);
           scrollToBottom();
         } else if (event.type === 'tool_use') {
           if (!bubbleAdded) {
