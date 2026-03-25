@@ -1,6 +1,6 @@
 # 2026-03-19 Phase 2 Roadmap — Knowledge Base & RAG Tool
 **Target:** Day 1–2  
-**Status:** Not started
+**Status:** Complete
 
 ---
 
@@ -20,7 +20,7 @@ A working FAISS vector index built from real knowledge base documents, queryable
 ## Checklist
 
 **Knowledge Base Documents**
-- [ ] Author all 6 markdown documents in `knowledge_base/` — substantive content, no stubs:
+- [x] Author all 6 markdown documents in `knowledge_base/` — substantive content, no stubs:
   - `cbt_techniques.md` — thought records, cognitive restructuring, behavioral activation
   - `dbt_skills.md` — TIPP, DEAR MAN, PLEASE skills
   - `mindfulness_exercises.md` — MBSR body scan, breath awareness
@@ -29,21 +29,21 @@ A working FAISS vector index built from real knowledge base documents, queryable
   - `crisis_resources.md` — 988 Lifeline, Crisis Text Line (741741), NAMI, SAMHSA
 
 **Ingest Script**
-- [ ] Implement `backend/ingest.py` — `TextLoader` → `RecursiveCharacterTextSplitter(500/50)` → `OpenAIEmbeddings("text-embedding-3-small")` → `FAISS.save_local("faiss_index")`
-- [ ] Run `python backend/ingest.py`; confirm `faiss_index/index.faiss` and `faiss_index/index.pkl` exist on disk
+- [x] Implement `backend/ingest.py` — `TextLoader` → `RecursiveCharacterTextSplitter(500/50)` → `OpenAIEmbeddings("text-embedding-3-small")` → `FAISS.save_local("faiss_index")`
+- [x] Run `python backend/ingest.py`; confirm `faiss_index/index.faiss` and `faiss_index/index.pkl` exist on disk
 
 **RAG Tool**
-- [ ] Implement `backend/tools/rag_search.py` — load FAISS, `retriever(k=4)`, `@tool` decorated `rag_search(query: str) -> str` returning top-4 chunks each prefixed `[source_filename]`
-- [ ] Create `backend/tools/__init__.py` (empty)
+- [x] Implement `backend/tools/rag_search.py` — load FAISS, `retriever(k=4)`, `@tool` decorated `rag_search(query: str) -> str` returning top-4 chunks each prefixed `[source_filename]`
+- [x] Create `backend/tools/__init__.py` (empty)
 
 **Unit Tests**
-- [ ] Write `tests/test_rag_search.py` — mock the retriever (no FAISS or OpenAI hits), 4+ tests: formatted `[source]\ncontent` output, chunks separated by `---`, empty results handled, source attribution present
-- [ ] All tests marked `@pytest.mark.unit`
+- [x] Write `tests/test_rag_search.py` — mock the retriever (no FAISS or OpenAI hits), 4+ tests: formatted `[source]\ncontent` output, chunks separated by `---`, empty results handled, source attribution present
+- [x] All tests marked `@pytest.mark.unit`
 
 **Test Fixture Index**
-- [ ] Create `tests/fixtures/sample_kb.md` — minimal document (2–3 sentences)
-- [ ] Run one-time fixture build script (see plan) — saves to `tests/fixtures/faiss_index/`
-- [ ] Commit `tests/fixtures/faiss_index/` — integration tests in Phases 4 and 6 need it on disk without API keys
+- [x] Create `tests/fixtures/sample_kb.md` — minimal document (2–3 sentences)
+- [x] Run one-time fixture build script (see plan) — saves to `tests/fixtures/faiss_index/`
+- [x] Commit `tests/fixtures/faiss_index/` — integration tests in Phases 4 and 6 need it on disk without API keys
 
 ---
 
