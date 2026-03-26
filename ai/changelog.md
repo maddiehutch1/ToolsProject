@@ -4,6 +4,24 @@ All product changes are documented here. Entries are ordered newest-first. Phase
 
 ---
 
+## [Phase 8] – 2026-03-25 · Integration & Polish
+_No commit yet_
+
+### Changed
+- `README.md` – Fully rewritten with setup, ingest, run, test, architecture, SSE protocol, and disclaimer sections
+- `backend/ingest.py` – Removed unused `import os` (ruff F401 fix)
+
+### Fixed
+- `backend/tools/web_search.py` – `TavilySearch.invoke()` in v0.2.x returns a dict (`{"results": [...]}`) instead of a list; code now extracts `raw["results"]` when the response is a dict, with a list fallback for backward compatibility
+
+### Verified
+- 47/47 unit + integration tests passing (`pytest -m "unit or integration" -v`)
+- Linter clean (`ruff check .` — 0 errors after auto-fix)
+- `.env` confirmed never committed (`git log --all --full-history -- .env` returns empty)
+- `faiss_index/` confirmed untracked and gitignored
+
+---
+
 ## [Patch] – 2026-03-25 · Innerly Rebrand & UI Polish
 _No commit yet_
 

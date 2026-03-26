@@ -13,8 +13,14 @@ function scrollToBottom() {
   container.scrollTop = container.scrollHeight;
 }
 
+const _renderer = new marked.Renderer();
+_renderer.link = ({ href, title, text }) => {
+  const titleAttr = title ? ` title="${title}"` : '';
+  return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
+};
+
 function renderMarkdown(text) {
-  return marked.parse(text, { breaks: true });
+  return marked.parse(text, { breaks: true, renderer: _renderer });
 }
 
 function appendBubble(role, text = '') {
