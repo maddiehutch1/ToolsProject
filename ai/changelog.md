@@ -4,6 +4,15 @@ All product changes are documented here. Entries are ordered newest-first. Phase
 
 ---
 
+## [Patch] – 2026-03-25 · Structured Logging
+_No commit yet_
+
+### Added
+- `backend/main.py` – `logging.config.dictConfig` setup with structured `%(asctime)s %(levelname)s %(name)s %(message)s` format; request, crisis, session, error, and response-complete log lines added to the `/chat` endpoint
+- `backend/agent.py` – `TOOL_CALL` log line on `on_tool_start` (tool name + full args); `TOOL_RESULT` log line on `on_tool_end` (tool name + 200-char result preview)
+
+---
+
 ## [Phase 8] – 2026-03-25 · Integration & Polish
 _No commit yet_
 

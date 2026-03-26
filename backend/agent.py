@@ -1,3 +1,4 @@
+import logging
 import operator
 from typing import Annotated
 from dotenv import load_dotenv
@@ -12,6 +13,8 @@ from backend.tools.web_search import web_search
 from backend.tools.calculator import calculator
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = (
     "You are a psychoeducational mental health companion. "
@@ -74,7 +77,14 @@ async def run_agent_stream(messages: list[BaseMessage]):
             if chunk:
                 yield {"type": "token", "content": chunk}
         elif kind == "on_tool_start":
-            yield {"type": "tool_use", "tool": event["name"]}
+            tool_name = event["name"]
+            tool_input = event["data"].get("input", {})
+            logger.info("TOOL_CALL tool=%s args=%s", tool_name, tool_input)
+            yield {"type": "tool_use", "tool": tool_name}
         elif kind == "on_tool_end":
-            yield {"type": "tool_done", "tool": event["name"]}
+            tool_name = event["name"]
+            tool_output = event["data"].get("output", "")
+            preview = str(tool_output)[:200]
+            logger.info("TOOL_RESULT tool=%s result_preview=%s", tool_name, preview)
+            yield {"type": "tool_done", "tool": tool_name}
     yield {"type": "done"}
